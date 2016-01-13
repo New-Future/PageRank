@@ -1,6 +1,6 @@
 /**************************************************************************
 File: pagerank.cpp
-Author: NewFuture & SunCj
+Author:SunCj & NewFuture
 Date: 2015-12-21
 Description: PageRank,读取文件中的数据
 **************************************************************************/
@@ -9,13 +9,26 @@ Description: PageRank,读取文件中的数据
 #include<algorithm>
 #include<vector>
 #include<iomanip>
+#include<time.h>
 using namespace std;
+
+unsigned long start_time, end_time;
+double used_time, all_time;
+//计时器，性能分析使用
+/*开始计时*/
+#define TIME_START all_time=0;start_time=clock();
+/*阶段计时*/
+#define TIME_COUNT(name) end_time = clock();\
+used_time = (double)(end_time - start_time) / CLOCKS_PER_SEC;\
+all_time += used_time;\
+cout <<name << "耗时：" << used_time << "s ,累计耗时: " << all_time << "s\n";\
+start_time = end_time;
 
 /*每个页的数据类型*/
 struct Page
 {
-	vector<rsize_t> Links;//外链,所有的外链ID
-	size_t src;//自身ID用于排序
+	vector<unsigned int> Links;//外链,所有的外链ID
+	unsigned int src;//自身ID用于排序
 	double Rank = 0;//PR值
 };
 
@@ -30,24 +43,25 @@ bool compare(Page &p1, Page &p2) { return p1.Rank > p2.Rank; }
 *Return :
 *	Pages* 所有页，长度为max_id
 */
-Page* ReadFile(const char* file_name, size_t& max_id)
+Page* ReadFile(const char* file_name, unsigned int& max_id)
 {
 	/*边(链接)的数据类型from->to*/
-	struct Border { size_t from, to; };
+	struct Border { unsigned int from, to; };
 	ifstream input;
-	size_t from, to, count = 0;
+	unsigned int from, to, count = 0;
 	input.open(file_name);//打开文件
 
 	/*读取所有边*/
 	vector<Border> links;
-	while (!input.eof())
+	while (!input.eof() && (input >> from >> to))
 	{
-		input >> from >> to;
 		Border b{ from,to };
 		links.push_back(b);
 		max_id = max((unsigned int)max_id, max(from, to));//记录最大ID
+		++count;
 	}
 	input.close();
+	cout << file_name << "输入统计 边数【链接数量】:" << count << " ,最大ID【总页数】：" << max_id << endl;
 
 	/*创建页向量*/
 	Page* pages = new Page[max_id];
@@ -58,7 +72,7 @@ Page* ReadFile(const char* file_name, size_t& max_id)
 	links.clear();
 	/*初始化*/
 	double base = 1.0 / max_id;
-	for (size_t i = 0; i < max_id; i++)
+	for (unsigned int i = 0; i < max_id; i++)
 	{
 		pages[i].src = i + 1;
 		pages[i].Rank = base;
@@ -75,13 +89,16 @@ Page* ReadFile(const char* file_name, size_t& max_id)
 */
 void PageRank(const char* file_name, double beta = 0.85)
 {
-	size_t max_id = 0;
+	unsigned int max_id = 0;
 
+	//开始计时
+	TIME_START;
 	Page* pages = ReadFile(file_name, max_id);
+	TIME_COUNT("读入文件");
 	double* newPR = new double[max_id];
 	double  min_error = 1.0 / (max_id*max_id), err = 10000000, base = (1.0 - beta) / max_id;
 	//初始化
-	for (size_t i = 0; i < max_id; i++)
+	for (unsigned int i = 0; i < max_id; i++)
 	{
 		newPR[i] = base;
 	}
@@ -91,15 +108,15 @@ void PageRank(const char* file_name, double beta = 0.85)
 	{
 		err = 0;
 		/*计算PR值*/
-		for (size_t i = 0; i < max_id; i++)
+		for (unsigned int i = 0; i < max_id; i++)
 		{
-			for each (size_t to in pages[i].Links)
+			for (unsigned int to : pages[i].Links)
 			{
 				newPR[to] += beta*pages[i].Rank / pages[i].Links.size();
 			}
 		}
 		/*更新*/
-		for (size_t i = 0; i < max_id; i++)
+		for (unsigned int i = 0; i < max_id; i++)
 		{
 			err += abs(pages[i].Rank - newPR[i]);
 			pages[i].Rank = newPR[i];
@@ -109,20 +126,25 @@ void PageRank(const char* file_name, double beta = 0.85)
 	}
 	cout << "迭代次数:" << count << ",误差" << setprecision(10) << err << endl;
 
+	TIME_COUNT("迭代计算")/*记时*/
+
 	/*排序输出Top10*/
-	sort(pages, pages + max_id, compare);
-	for (size_t i = 0; i < 10; i++)
+		sort(pages, pages + max_id, compare);
+	cout << "\nTOP100\t ID \t RANK\n";
+	for (unsigned int i = 0; i < 100; i++)
 	{
-		cout << i + 1 << ends << pages[i].src << "\t" << setprecision(10) << pages[i].Rank << endl;
+		cout << i + 1 << "\t" << pages[i].src << "\t" << setprecision(10) << pages[i].Rank << endl;
 	}
 	/*结果写入文件*/
 	ofstream out;
 	out.open("PR.txt");
-	for (size_t i = 0; i < max_id; i++)
+	for (unsigned int i = 0; i < max_id; i++)
 	{
 		out << pages[i].src << "\t" << setprecision(10) << pages[i].Rank << endl;
 	}
 	out.close();
+	cout << "全部" << max_id << "条结果已输出到 PR.txt中\n";
+	TIME_COUNT("排序输出")/*记时*/
 }
 
 /*
