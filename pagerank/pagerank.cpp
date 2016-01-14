@@ -1,8 +1,8 @@
-/**************************************************************************
+ï»¿/**************************************************************************
 File: pagerank.cpp
 Author:SunCj & NewFuture
 Date: 2015-12-21
-Description: PageRank,¶ÁÈ¡ÎÄ¼şÖĞµÄÊı¾İ
+Description: PageRank,è¯»å–æ–‡ä»¶ä¸­çš„æ•°æ®
 **************************************************************************/
 #include<iostream>
 #include<fstream>
@@ -14,63 +14,63 @@ using namespace std;
 
 unsigned long start_time, end_time;
 double used_time, all_time;
-//¼ÆÊ±Æ÷£¬ĞÔÄÜ·ÖÎöÊ¹ÓÃ
-/*¿ªÊ¼¼ÆÊ±*/
+//è®¡æ—¶å™¨ï¼Œæ€§èƒ½åˆ†æä½¿ç”¨
+/*å¼€å§‹è®¡æ—¶*/
 #define TIME_START all_time=0;start_time=clock();
-/*½×¶Î¼ÆÊ±*/
+/*é˜¶æ®µè®¡æ—¶*/
 #define TIME_COUNT(name) end_time = clock();\
 used_time = (double)(end_time - start_time) / CLOCKS_PER_SEC;\
 all_time += used_time;\
-cout <<name << "ºÄÊ±£º" << used_time << "s ,ÀÛ¼ÆºÄÊ±: " << all_time << "s\n";\
+cout <<name << "è€—æ—¶ï¼š" << used_time << "s ,ç´¯è®¡è€—æ—¶: " << all_time << "s\n";\
 start_time = end_time;
 
-/*Ã¿¸öÒ³µÄÊı¾İÀàĞÍ*/
+/*æ¯ä¸ªé¡µçš„æ•°æ®ç±»å‹*/
 struct Page
 {
-	vector<unsigned int> Links;//ÍâÁ´,ËùÓĞµÄÍâÁ´ID
-	unsigned int src;//×ÔÉíIDÓÃÓÚÅÅĞò
-	double Rank = 0;//PRÖµ
+	vector<unsigned int> Links;//å¤–é“¾,æ‰€æœ‰çš„å¤–é“¾ID
+	unsigned int src;//è‡ªèº«IDç”¨äºæ’åº
+	double Rank = 0;//PRå€¼
 };
 
-/*Page´óĞ¡±È½Ï·½·¨*/
+/*Pageå¤§å°æ¯”è¾ƒæ–¹æ³•*/
 bool compare(Page &p1, Page &p2) { return p1.Rank > p2.Rank; }
 
 /*
-*Summary:¶ÁÈ¡Ô­Ê¼Êı¾İ¹¹ÔìPageÏòÁ¿
+*Summary:è¯»å–åŸå§‹æ•°æ®æ„é€ Pageå‘é‡
 *Parameters:
-*	file_name:ÎÄ¼şÃû
-*	&max_id : ×î´óID
+*	file_name:æ–‡ä»¶å
+*	&max_id : æœ€å¤§ID
 *Return :
-*	Pages* ËùÓĞÒ³£¬³¤¶ÈÎªmax_id
+*	Pages* æ‰€æœ‰é¡µï¼Œé•¿åº¦ä¸ºmax_id
 */
-Page* ReadFile(const char* file_name, unsigned int& max_id)
+Page* InitBlock(const char* file_name, unsigned int& max_id)
 {
-	/*±ß(Á´½Ó)µÄÊı¾İÀàĞÍfrom->to*/
+	/*è¾¹(é“¾æ¥)çš„æ•°æ®ç±»å‹from->to*/
 	struct Border { unsigned int from, to; };
 	ifstream input;
 	unsigned int from, to, count = 0;
-	input.open(file_name);//´ò¿ªÎÄ¼ş
+	input.open(file_name);//æ‰“å¼€æ–‡ä»¶
 
-	/*¶ÁÈ¡ËùÓĞ±ß*/
+	/*è¯»å–æ‰€æœ‰è¾¹*/
 	vector<Border> links;
 	while (!input.eof() && (input >> from >> to))
 	{
 		Border b{ from,to };
 		links.push_back(b);
-		max_id = max((unsigned int)max_id, max(from, to));//¼ÇÂ¼×î´óID
+		max_id = max((unsigned int)max_id, max(from, to));//è®°å½•æœ€å¤§ID
 		++count;
 	}
 	input.close();
-	cout << file_name << "ÊäÈëÍ³¼Æ ±ßÊı¡¾Á´½ÓÊıÁ¿¡¿:" << count << " ,×î´óID¡¾×ÜÒ³Êı¡¿£º" << max_id << endl;
+	cout << file_name << "è¾“å…¥ç»Ÿè®¡ è¾¹æ•°ã€é“¾æ¥æ•°é‡ã€‘:" << count << " ,æœ€å¤§IDã€æ€»é¡µæ•°ã€‘ï¼š" << max_id << endl;
 
-	/*´´½¨Ò³ÏòÁ¿*/
+	/*åˆ›å»ºé¡µå‘é‡*/
 	Page* pages = new Page[max_id];
 	for each (Border link in links)
 	{
 		pages[link.from - 1].Links.push_back(link.to - 1);
 	}
 	links.clear();
-	/*³õÊ¼»¯*/
+	/*åˆå§‹åŒ–*/
 	double base = 1.0 / max_id;
 	for (unsigned int i = 0; i < max_id; i++)
 	{
@@ -81,33 +81,32 @@ Page* ReadFile(const char* file_name, unsigned int& max_id)
 }
 
 /*
-*Summary:¼ÆËãPAGERANK
+*Summary:è®¡ç®—PAGERANK
 *Parameters:
-*     file_name:ÎÄ¼şÃû
-*     beta : ´«µİÖµbeta
+*     file_name:æ–‡ä»¶å
+*     beta : ä¼ é€’å€¼beta
 *Return :void
 */
 void PageRank(const char* file_name, double beta = 0.85)
 {
 	unsigned int max_id = 0;
-
-	//¿ªÊ¼¼ÆÊ±
+	//å¼€å§‹è®¡æ—¶
 	TIME_START;
-	Page* pages = ReadFile(file_name, max_id);
-	TIME_COUNT("¶ÁÈëÎÄ¼ş");
+	Page* pages = InitBlock(file_name, max_id);
+	TIME_COUNT("è¯»å…¥æ–‡ä»¶");
 	double* newPR = new double[max_id];
 	double  min_error = 1.0 / (max_id*max_id), err = 10000000, base = (1.0 - beta) / max_id;
-	//³õÊ¼»¯
+	//åˆå§‹åŒ–
 	for (unsigned int i = 0; i < max_id; i++)
 	{
 		newPR[i] = base;
 	}
-	/*µü´ú*/
+	/*è¿­ä»£*/
 	int count = 0;
 	while (err > min_error)
 	{
 		err = 0;
-		/*¼ÆËãPRÖµ*/
+		/*è®¡ç®—PRå€¼*/
 		for (unsigned int i = 0; i < max_id; i++)
 		{
 			for (unsigned int to : pages[i].Links)
@@ -115,7 +114,7 @@ void PageRank(const char* file_name, double beta = 0.85)
 				newPR[to] += beta*pages[i].Rank / pages[i].Links.size();
 			}
 		}
-		/*¸üĞÂ*/
+		/*æ›´æ–°*/
 		for (unsigned int i = 0; i < max_id; i++)
 		{
 			err += abs(pages[i].Rank - newPR[i]);
@@ -124,18 +123,18 @@ void PageRank(const char* file_name, double beta = 0.85)
 		}
 		count++;
 	}
-	cout << "µü´ú´ÎÊı:" << count << ",Îó²î" << setprecision(10) << err << endl;
+	cout << "è¿­ä»£æ¬¡æ•°:" << count << ",è¯¯å·®" << setprecision(10) << err << endl;
 
-	TIME_COUNT("µü´ú¼ÆËã")/*¼ÇÊ±*/
+	TIME_COUNT("è¿­ä»£è®¡ç®—")/*è®°æ—¶*/
 
-	/*ÅÅĞòÊä³öTop10*/
-		sort(pages, pages + max_id, compare);
+	/*æ’åºè¾“å‡ºTop100*/
+	sort(pages, pages + max_id, compare);
 	cout << "\nTOP100\t ID \t RANK\n";
 	for (unsigned int i = 0; i < 100; i++)
 	{
 		cout << i + 1 << "\t" << pages[i].src << "\t" << setprecision(10) << pages[i].Rank << endl;
 	}
-	/*½á¹ûĞ´ÈëÎÄ¼ş*/
+	/*ç»“æœå†™å…¥æ–‡ä»¶*/
 	ofstream out;
 	out.open("PR.txt");
 	for (unsigned int i = 0; i < max_id; i++)
@@ -143,18 +142,18 @@ void PageRank(const char* file_name, double beta = 0.85)
 		out << pages[i].src << "\t" << setprecision(10) << pages[i].Rank << endl;
 	}
 	out.close();
-	cout << "È«²¿" << max_id << "Ìõ½á¹ûÒÑÊä³öµ½ PR.txtÖĞ\n";
-	TIME_COUNT("ÅÅĞòÊä³ö")/*¼ÇÊ±*/
+	cout << "å…¨éƒ¨" << max_id << "æ¡ç»“æœå·²è¾“å‡ºåˆ° PR.txtä¸­\n";
+	TIME_COUNT("æ’åºè¾“å‡º")/*è®°æ—¶*/
 }
 
 /*
-* µÚÒ»¸ö²ÎÊıÎÄ¼şÃûÄ¬ÈÏWikiData.txt
-* µÚ¶ş¸ö²ÎÊıbetaÄ¬ÈÏ0.85
+* ç¬¬ä¸€ä¸ªå‚æ•°æ–‡ä»¶åé»˜è®¤WikiData.txt
+* ç¬¬äºŒä¸ªå‚æ•°betaé»˜è®¤0.85
 */
 int main(int argc, char *argv[])
 {
-	char* file_name = argc < 2 ? "WikiData.txt" : argv[1];//µÚÒ»¸ö²ÎÊıÎÄ¼ş
-	double beta = argc >= 3 ? atof(argv[2]) : 0.85;//µÚ¶ş¸ö²ÎÊıbetaÖµ
+	char* file_name = argc < 2 ? "WikiData.txt" : argv[1];//ç¬¬ä¸€ä¸ªå‚æ•°æ–‡ä»¶
+	double beta = argc >= 3 ? atof(argv[2]) : 0.85;//ç¬¬äºŒä¸ªå‚æ•°betaå€¼
 	PageRank(file_name, beta);
 	system("pause");
 	return 0;
